@@ -1,0 +1,11 @@
+[general]
+resolution = [512, 512]
+caption_extension = ".txt"
+batch_size = 2
+enable_bucket = true
+bucket_no_upscale = false
+
+[[datasets]]
+image_directory = "G:/datasset/Belle delphine"
+cache_directory = "G:/datasset/Belle delphine/cache"
+num_repeats = 1
