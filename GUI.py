@@ -3,6 +3,7 @@ import subprocess
 import os
 import time
 
+os.environ['HF_HUB_CACHE'] = "/workspace/hf_cache"
 # ==============================================================================
 # ==== 1. COMMAND EXECUTION LOGIC ====
 # This is the core function that runs scripts and streams output.
@@ -408,4 +409,5 @@ if __name__ == "__main__":
     # Launch the app. Use share=True to create a public link if needed.
     # Use server_name="0.0.0.0" to make it accessible on your network.
     demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
+
 
