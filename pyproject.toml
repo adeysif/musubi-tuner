@@ -1,7 +1,7 @@
 [project]
 name = "musubi-tuner"
 version = "0.2.10"
-description = "Musubi Tuner by kohya_ss"
+description = "Musubi Tuner by kohya_ss+ gui icekiub"
 readme = "README.md"
 requires-python = ">=3.10, <3.13"
 dependencies = [
