@@ -3,7 +3,6 @@ import subprocess
 import os
 import time
 
-os.environ['HF_HUB_CACHE'] = "/workspace/hf_cache"
 # ==============================================================================
 # ==== 1. COMMAND EXECUTION LOGIC ====
 # This is the core function that runs scripts and streams output.
@@ -23,7 +22,7 @@ def run_command_stream(command_list, command_name="Command"):
     yield console_output
 
     try:
-        # Using Popen to stream output in real-time
+        # Using Popen to stream output in real-time from the correct directory
         process = subprocess.Popen(
             final_command,
             stdout=subprocess.PIPE,
@@ -31,7 +30,8 @@ def run_command_stream(command_list, command_name="Command"):
             text=True,
             encoding='utf-8',
             errors='replace',
-            bufsize=1  # Line-buffered
+            bufsize=1,  # Line-buffered
+            cwd="/workspace/musubi-tuner" # Ensure commands run from the tuner's directory
         )
 
         # Read and yield output line by line
@@ -52,7 +52,7 @@ def run_command_stream(command_list, command_name="Command"):
         yield console_output
 
     except FileNotFoundError:
-        yield f"❌ ERROR: Command not found. Make sure 'uv' or 'accelerate' is installed and in the system's PATH."
+        yield f"❌ ERROR: Command not found. Make sure 'python' or 'accelerate' is installed and in the system's PATH."
     except Exception as e:
         yield f"❌ An unexpected error occurred:\n{type(e).__name__}: {str(e)}"
 
@@ -172,12 +172,12 @@ num_repeats = 1
                     with gr.Tabs():
                         with gr.Tab("1. Cache Latents"):
                             gr.Markdown("### Cache Image Latents (WAN)")
-                            wan_vae_path_t1 = gr.Textbox(value="/workspace/musubi-tuner/models/Wan2_1_VAE_bf16.safetensors", label="VAE Model Path")
+                            wan_vae_path_t1 = gr.Textbox(value="/workspace/ComfyUI/models/vae/wan_2.1_vae.safetensors", label="VAE Model Path")
                             wan_cache_latents_btn = gr.Button("Run Cache Latents (WAN)", variant="primary")
 
                         with gr.Tab("2. Cache Text"):
                             gr.Markdown("### Cache Text Encoder Outputs (WAN)")
-                            wan_t5_path_t2 = gr.Textbox(value="/workspace/ComfyUI/models/clip/umt5-xxl-enc-fp8_e4m3fn.safetensors", label="T5 Model Path")
+                            wan_t5_path_t2 = gr.Textbox(value="/workspace/ComfyUI/models/t5/umt5-xxl-enc-fp8_e4m3fn.safetensors", label="T5 Model Path")
                             wan_batch_size_t2 = gr.Number(value=16, label="Batch Size", precision=0)
                             wan_cache_text_btn = gr.Button("Run Cache Text Encoder (WAN)", variant="primary")
 
@@ -186,10 +186,10 @@ num_repeats = 1
                             with gr.Row():
                                 with gr.Column(scale=1):
                                     gr.Markdown("#### Models & Paths")
-                                    wan_dit_path = gr.Textbox(value="/workspace/musubi-tuner/models/wan2.2_t2v_low_noise_14B_fp16.safetensors", label="DiT Model")
-                                    wan_dit_high_noise_path = gr.Textbox(value="/workspace/musubi-tuner/models/wan2.2_t2v_high_noise_14B_fp16.safetensors", label="DiT High Noise")
-                                    wan_vae_path_t3 = gr.Textbox(value="/workspace/musubi-tuner/models/Wan2_1_VAE_bf16.safetensors", label="VAE Model")
-                                    wan_t5_path_t3 = gr.Textbox(value="/workspace/ComfyUI/models/clip/umt5-xxl-enc-fp8_e4m3fn.safetensors", label="T5 Encoder")
+                                    wan_dit_path = gr.Textbox(value="/workspace/ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-LOW_bf16.safetensors", label="DiT Model")
+                                    wan_dit_high_noise_path = gr.Textbox(value="/workspace/ComfyUI/models/diffusion_models/Wan2_2-I2V-A14B-HIGH_bf16.safetensors", label="DiT High Noise")
+                                    wan_vae_path_t3 = gr.Textbox(value="/workspace/ComfyUI/models/vae/wan_2.1_vae.safetensors", label="VAE Model")
+                                    wan_t5_path_t3 = gr.Textbox(value="/workspace/ComfyUI/models/t5/umt5-xxl-enc-fp8_e4m3fn.safetensors", label="T5 Encoder")
                                     wan_sample_prompts_path = gr.Textbox(value="/workspace/musubi-tuner/prompts.txt", label="Sample Prompts File")
                                     wan_output_dir = gr.Textbox(value="/workspace/ComfyUI/models/loras", label="Output Directory")
                                     wan_output_name = gr.Textbox(value="MyWanLora", label="Output Name")
@@ -202,7 +202,7 @@ num_repeats = 1
                                     wan_save_steps = gr.Number(value=100, label="Save Every N Steps", precision=0)
                                     wan_sample_steps = gr.Number(value=100, label="Sample Every N Steps", precision=0)
                                     wan_network_dim = gr.Number(value=16, label="Network Dim", precision=0)
-                                    wan_network_alpha = gr.Number(value=16, label="Network Alpha", precision=0)
+                                    wan_network_alpha = gr.Number(value=32, label="Network Alpha", precision=0)
                                     wan_discrete_flow_shift = gr.Textbox(value="1.0", label="Discrete Flow Shift")
                                     wan_seed = gr.Number(value=7626, label="Seed", precision=0)
                             with gr.Accordion("Flags & Options", open=False):
@@ -233,7 +233,7 @@ num_repeats = 1
     # --- Qwen Event Handlers ---
     def on_qwen_cache_latents(cfg_path, vae_path):
         command = [
-            "uv", "run", "qwen_image_cache_latents.py",
+            "python", "qwen_image_cache_latents.py",
             "--dataset_config", cfg_path,
             "--vae", vae_path
         ]
@@ -247,7 +247,7 @@ num_repeats = 1
 
     def on_qwen_cache_text(cfg_path, encoder_path, batch_size):
         command = [
-            "uv", "run", "qwen_image_cache_text_encoder_outputs.py",
+            "python", "qwen_image_cache_text_encoder_outputs.py",
             "--dataset_config", cfg_path,
             "--text_encoder", encoder_path,
             "--batch_size", batch_size
@@ -267,7 +267,7 @@ num_repeats = 1
          precision, optimizer, sdpa, grad_ckpt, fp8_base, fp8_vl) = args
 
         command = [
-            "uv", "run", "--extra", "cu128", "accelerate", "launch",
+            "accelerate", "launch",
             "--num_cpu_threads_per_process", "1",
             "--mixed_precision", precision,
             "src/musubi_tuner/qwen_image_train_network.py",
@@ -316,7 +316,7 @@ num_repeats = 1
     # --- WAN Event Handlers ---
     def on_wan_cache_latents(cfg_path, vae_path):
         command = [
-            "uv", "run", "wan_cache_latents.py",
+            "python", "wan_cache_latents.py",
             "--dataset_config", cfg_path,
             "--vae", vae_path
         ]
@@ -330,7 +330,7 @@ num_repeats = 1
 
     def on_wan_cache_text(cfg_path, t5_path, batch_size):
         command = [
-            "uv", "run", "wan_cache_text_encoder_outputs.py",
+            "python", "wan_cache_text_encoder_outputs.py",
             "--dataset_config", cfg_path,
             "--t5", t5_path,
             "--batch_size", batch_size
@@ -351,7 +351,7 @@ num_repeats = 1
          sdpa, grad_ckpt, fp8_base, offload_dit, persistent_workers) = args
         
         command = [
-            "uv", "run", "accelerate", "launch",
+            "accelerate", "launch",
             "--num_cpu_threads_per_process", "1",
             "--mixed_precision", precision,
             "src/musubi_tuner/wan_train_network.py",
@@ -406,8 +406,7 @@ num_repeats = 1
 # ==== 4. LAUNCH THE APP ====
 # ==============================================================================
 if __name__ == "__main__":
-    # Launch the app. Use share=True to create a public link if needed.
-    # Use server_name="0.0.0.0" to make it accessible on your network.
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
-
+    # Launch the app. Use server_name="0.0.0.0" to make it accessible on your network.
+    # The port and share settings are typically handled by the entrypoint script's arguments.
+    demo.launch()
 
