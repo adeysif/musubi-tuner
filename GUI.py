@@ -408,5 +408,6 @@ num_repeats = 1
 if __name__ == "__main__":
     # Launch the app. Use server_name="0.0.0.0" to make it accessible on your network.
     # The port and share settings are typically handled by the entrypoint script's arguments.
-    demo.launch()
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
+
 
